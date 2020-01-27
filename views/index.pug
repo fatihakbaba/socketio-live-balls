@@ -1,17 +1,17 @@
 extends layout
 
 block content
-  div(ng-controller="indexContoller")
+  div(ng-controller="indexController")
     .ui.one.column.stackable.center.aligned.page.grid.margin-30
         .column.twelve.wide
           .ui.stacked.segment.gameArea
             .circle.blue(style='left:150px; top:100px')
               .relative
-                span.name Mehmet
+                span.name Fatih
                 .message Selam
             .circle.green(style='left:300px; top:100px')
               .relative
-                span.name Alp
+                span.name Ahmet
                 .message selam nasılsın :)
             .circle.red(style='left:350px; top:300px')
               .relative
@@ -20,12 +20,12 @@ block content
           .ui.items.chat
             .item
               .content
-                a.header.name Mehmet
+                a.header.name Fatih
                 .description.message
                   | Selam
             .item
               .content
-                a.header.name Alp
+                a.header.name Ahmet
                 .description.message
                   | selam nasılsın :)
             .item
