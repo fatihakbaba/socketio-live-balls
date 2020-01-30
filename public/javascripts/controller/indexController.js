@@ -79,8 +79,30 @@ app.controller('indexController', ['$scope', 'indexFactory', ($scope, indexFacto
                         $(`#${socket.id}`).animate({ 'left': $event.offsetX, 'top': $event.offsetY }, () => {
                             animate = false;
                         });
-
                     }
+                };
+
+                $scope.newMessage = () => {
+                    let message = $scope.message;
+                    console.log(message);
+
+                    const messageData = {
+                        type: {
+                            code: 1,
+                        },
+                        username: username,
+                        text: message,
+                    };
+
+                    $scope.messages.push(messageData);
+                    $scope.message = '';
+
+                    
+
+                    setTimeout(() => {
+                        const element = document.getElementById('chat-area');
+                        element.scrollTop = element.scrollHeight;
+                    });
                 };
 
             }).catch((err) => {
