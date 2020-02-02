@@ -13,100 +13,121 @@ app.controller('indexController', ['$scope', 'indexFactory', ($scope, indexFacto
             return false;
     };
 
-    function initSocket(username) {
+    scrollTop = () => {
+        setTimeout(() => {
+            const element = document.getElementById('chat-area');
+            element.scrollTop = element.scrollHeight;
+        });
+    }
+
+    showBubble = (id, message) => {
+        $('#' + id).find('.message').show().html(message);
+
+        setTimeout(() => {
+            $('#' + id).find('.message').hide();
+        }, 2000);
+    }
+
+    initSocket = async (username) => {
         const connectionOptions = {
             reconnectionAttempts: 3,
             reconnectionDelay: 600
         };
+        try {
+            const socket = await indexFactory.connectSocket('http://localhost:3000', connectionOptions);
+            //console.log('Connected', socket);
+            socket.emit('newUser', { username });
 
-        indexFactory.connectSocket('http://localhost:3000', connectionOptions)
-            .then((socket) => {
-                //console.log('Connected', socket);
-                socket.emit('newUser', { username });
+            socket.on('initPlayers', (players) => {
+                $scope.players = players;
+                $scope.$apply();
+                console.log($scope.players);
+            });
 
-                socket.on('initPlayers', (players) => {
-                    $scope.players = players;
-                    $scope.$apply();
-                    console.log($scope.players);
+            socket.on('newUser', (data) => {
+                console.log(data);
+                const messageData = {
+                    type: {
+                        code: 0, //server or user message
+                        message: 1 //login or disconnect message
+                    }, //info
+                    username: data.username
+                };
+
+                $scope.messages.push(messageData);
+                $scope.players[data.id] = data;
+                scrollTop();
+                $scope.$apply();
+            });
+
+            socket.on('disUser', (data) => {
+                const messageData = {
+                    type: {
+                        code: 0,
+                        message: 0
+                    }, //info
+                    username: data.username
+                };
+
+                $scope.messages.push(messageData);
+                delete $scope.players[data.id];
+                scrollTop();
+                $scope.$apply();
+            });
+
+            socket.on('animate', (data) => {
+                console.log(data);
+                $(`#${data.socketId}`).animate({ 'left': data.x, 'top': data.y }, () => {
+                    animate = false;
                 });
+            });
 
-                socket.on('newUser', (data) => {
-                    console.log(data);
-                    const messageData = {
-                        type: {
-                            code: 0, //server or user message
-                            message: 1 //login or disconnect message
-                        }, //info
-                        username: data.username
-                    };
+            socket.on('newMessage', message => {
+                $scope.messages.push(message);
+                $scope.$apply();
 
-                    $scope.messages.push(messageData);
-                    $scope.players[data.id] = data;
-                    $scope.$apply();
-                });
+                showBubble(message.socketId, message.text);
+                scrollTop();
+            });
 
-                socket.on('disUser', (data) => {
-                    const messageData = {
-                        type: {
-                            code: 0,
-                            message: 0
-                        }, //info
-                        username: data.username
-                    };
+            let animate = false;
+            $scope.onClickPlayer = ($event) => {
+                console.log($event.offsetX, $event.offsetY);
+                if (!animate) {
+                    let x = $event.offsetX;
+                    let y = $event.offsetY;
 
-                    $scope.messages.push(messageData);
-                    delete $scope.players[data.id];
-                    $scope.$apply();
-                });
+                    socket.emit('animate', { x, y });
 
-                socket.on('animate', (data) => {
-                    console.log(data);
-                    $(`#${data.socketId}`).animate({ 'left': data.x, 'top': data.y }, () => {
+                    animate = true;
+                    $(`#${socket.id}`).animate({ 'left': $event.offsetX, 'top': $event.offsetY }, () => {
                         animate = false;
                     });
-                });
+                }
+            };
 
-                let animate = false;
-                $scope.onClickPlayer = ($event) => {
-                    console.log($event.offsetX, $event.offsetY);
-                    if (!animate) {
-                        let x = $event.offsetX;
-                        let y = $event.offsetY;
+            $scope.newMessage = () => {
+                let message = $scope.message;
+                console.log(message);
 
-                        socket.emit('animate', { x, y });
-
-                        animate = true;
-                        $(`#${socket.id}`).animate({ 'left': $event.offsetX, 'top': $event.offsetY }, () => {
-                            animate = false;
-                        });
-                    }
+                const messageData = {
+                    type: {
+                        code: 1,
+                    },
+                    username: username,
+                    text: message,
                 };
 
-                $scope.newMessage = () => {
-                    let message = $scope.message;
-                    console.log(message);
+                $scope.messages.push(messageData);
+                $scope.message = '';
 
-                    const messageData = {
-                        type: {
-                            code: 1,
-                        },
-                        username: username,
-                        text: message,
-                    };
+                socket.emit('newMessage', messageData);
 
-                    $scope.messages.push(messageData);
-                    $scope.message = '';
-
-                    
-
-                    setTimeout(() => {
-                        const element = document.getElementById('chat-area');
-                        element.scrollTop = element.scrollHeight;
-                    });
-                };
-
-            }).catch((err) => {
-                console.log(err);
-            });
+                showBubble(socket.id, message);
+                scrollTop();
+            };
+        } catch (err) {
+            console.log(err);
+        }
     }
 }]);

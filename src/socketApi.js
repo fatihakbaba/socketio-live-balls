@@ -1,10 +1,10 @@
 const socketio = require('socket.io');
 const io = socketio();
 
-const socketApi = { };
+const socketApi = {};
 socketApi.io = io;
 
-const users = { };
+const users = {};
 
 //helpers
 const randomColor = require('../helpers/randomColor');
@@ -38,14 +38,23 @@ io.on('connection', (socket) => {
     });
 
     socket.on('animate', (data) => {
-       users[socket.id].position.x = data.x;
-       users[socket.id].position.y = data.y;
+        try {
+            users[socket.id].position.x = data.x;
+            users[socket.id].position.y = data.y;
 
-       socket.broadcast.emit('animate', { 
-           socketId: socket.id, 
-           x: data.x, 
-           y:data.y 
-        });
+            socket.broadcast.emit('animate', {
+                socketId: socket.id,
+                x: data.x,
+                y: data.y
+            });
+        } catch (err) {
+            console.log(err);
+        }
+    });
+
+    socket.on('newMessage', data => {
+        const messageData = Object.assign({ socketId: socket.id }, data);
+        socket.broadcast.emit('newMessage', messageData);
     });
 });
 
