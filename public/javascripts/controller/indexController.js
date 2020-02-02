@@ -1,4 +1,4 @@
-app.controller('indexController', ['$scope', 'indexFactory', ($scope, indexFactory) => {
+app.controller('indexController', ['$scope', 'indexFactory', 'configFactory', ($scope, indexFactory, configFactory) => {
     //const socket = io.connect('http://localhost:3000');
 
     $scope.messages = [];
@@ -34,7 +34,10 @@ app.controller('indexController', ['$scope', 'indexFactory', ($scope, indexFacto
             reconnectionDelay: 600
         };
         try {
-            const socket = await indexFactory.connectSocket('http://localhost:3000', connectionOptions);
+
+            const socketUrl = await configFactory.getConfig();
+            console.log(socketUrl);
+            const socket = await indexFactory.connectSocket(socketUrl.data.socketUrl, connectionOptions);
             //console.log('Connected', socket);
             socket.emit('newUser', { username });
 
